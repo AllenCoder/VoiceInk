@@ -1,0 +1,56 @@
+name: macOS Local Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-local-app:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "16.4"
+
+      - name: Verify build tools
+        run: make check
+
+      - name: Build whisper.xcframework
+        run: make setup
+
+      - name: Build VoiceInk app (local unsigned)
+        run: |
+          xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Debug \
+            -derivedDataPath "$PWD/.local-build" \
+            -xcconfig LocalBuild.xcconfig \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            DEVELOPMENT_TEAM="" \
+            CODE_SIGN_ENTITLEMENTS="$PWD/VoiceInk/VoiceInk.local.entitlements" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) LOCAL_BUILD' \
+            build
+
+      - name: Package app artifact
+        run: |
+          APP_PATH="$PWD/.local-build/Build/Products/Debug/VoiceInk.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "VoiceInk.app not found at $APP_PATH"
+            exit 1
+          fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$PWD/VoiceInk.app.zip"
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoiceInk-local-app
+          path: VoiceInk.app.zip
+          retention-days: 14

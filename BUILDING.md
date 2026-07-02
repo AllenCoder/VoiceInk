@@ -14,6 +14,28 @@ Before you begin, ensure you have:
 
 The easiest way to build VoiceInk is using the included Makefile, which automates the entire build process including building and linking the whisper framework.
 
+## Build on GitHub macOS Runner (Recommended for Linux Containers)
+
+If you are working in a Linux dev container (Codespaces/devcontainer), you cannot run `xcodebuild` locally.
+
+Use the GitHub Actions workflow instead:
+
+1. Push your branch to GitHub.
+2. Trigger workflow **macOS Local Build**.
+3. Download artifact **VoiceInk-local-app** (`VoiceInk.app.zip`).
+
+You can trigger it from terminal after reopening your container:
+
+```bash
+gh workflow run "macOS Local Build" --ref main
+gh run list --workflow "macOS Local Build"
+gh run view --log
+```
+
+Or trigger from GitHub UI: **Actions** -> **macOS Local Build** -> **Run workflow**.
+
+The workflow file is in `.github/workflows/macos-local-build.yml` and builds using a macOS runner with Xcode.
+
 ### Simple Build Commands
 
 ```bash
